@@ -15,106 +15,38 @@ A_Star::A_Star(int numRows, int numColumns) : numRows_(numRows), numColumns_(num
     // Initialize the random number generator
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    // Initialize the grid based on user-inputted dimensions using vectors:
-    grid_.resize(numColumns_, std::vector<Node>(numRows_, Node{false, 0, 0, -1, -1, FLT_MAX, FLT_MAX, FLT_MAX}));
+    grid_ = (Node**)malloc(numRows_ * sizeof(Node*));
+    for(int i = 0; i < numRows_; i++) {
+        grid_[i] = (Node*)malloc(numColumns * sizeof(Node));
+    }
 
     // Initialize the grid based on user-inputted dimensions:
     for (int x = 0; x < numColumns_; x++) {
         for (int y = 0; y < numRows_; y++) {
             grid_[x][y] = Node{false, x, y, -1, -1, FLT_MAX, FLT_MAX, FLT_MAX};            
         }
-    }    while(!openSet_queue.empty())
-    {
-        // Get the node with the lowest fCost from the open set
-        Node curr = openSet_queue.top();
-        openSet_queue.pop();
-
-        // Display the image in real-time
-        drawGrid();
-
-        // Check if the current node is the goal node, and obtain stack containing path if true:
-        if (curr.x == goalPos.x && curr.y == goalPos.y) 
-        {
-            reachedGoal = true;
-            obtainPathStack();
-
-            while(!pathStack.empty())
-            {
-                pathSet.insert(pathStack.top());
-                pathStack.pop();
-
-                // Display the image in real-time
-                drawGrid();
-            }
-
-            break;
-        }
-
-
-        // Generating neighboring nodes (up, down, left, right):
-        std::vector<std::pair<int, int>> neighbors = 
-        {
-            {curr.x - 1, curr.y}, {curr.x + 1, curr.y},
-            {curr.x, curr.y - 1}, {curr.x, curr.y + 1},
-        };
-
-
-        // Examining each potential neighbor:
-        for(const auto& neighbor : neighbors) 
-        {
-            int neighborX = neighbor.first;
-            int neighborY = neighbor.second;
-            float tentativeGCost;
-
-            if(isValidCell(neighborX, neighborY) && !isOccupied(neighborX, neighborY))
-            {
-                tentativeGCost = curr.gCost + getNodeDist(curr, grid_[neighborX][neighborY]);
-            }
-            else
-            {
-                continue; // Skip this neighbor
-            }
-
-            // Check if neighbor is already in closed set:
-            if(closedSet.find({neighborX, neighborY}) != closedSet.end()) 
-            {
-                continue; // Skip this neighbor
-            }
-
-
-            if (tentativeGCost < grid_[neighborX][neighborY].gCost)
-            {
-                // Update the neighbor's parameters:
-                grid_[neighborX][neighborY].parentX = curr.x;
-                grid_[neighborX][neighborY].parentY = curr.y;
-                grid_[neighborX][neighborY].gCost = tentativeGCost;
-                grid_[neighborX][neighborY].hCost = getNodeDist(grid_[neighborX][neighborY], goalPos);
-                grid_[neighborX][neighborY].fCost = grid_[neighborX][neighborY].gCost + grid_[neighborX][neighborY].hCost;
-                
-                openSet.insert({neighborX, neighborY});
-                openSet_queue.push(grid_[neighborX][neighborY]);
-                
-                drawGrid();
-            }
-        }
-
-        closedSet.insert({curr.x, curr.y});
-
-        drawGrid();
-
-    }
-
-    if(!reachedGoal)
-    {
-        std::cout << "Failed to reach goal." << std::endl;
-    }
-
+    }    
+    
     // Create the OpenCV Image and initialize with a white background:
+    cv::namedWindow("A* Visualization", cv::WINDOW_NORMAL);
     occupancyGridImage_ = cv::Mat(numRows_, numColumns_, CV_8UC3, cv::Scalar(255, 255, 255));
-
+    
+    // Initialize the grid based on user-inputted dimensions using vectors:
+    // grid_.resize(numColumns_, std::vector<Node>(numRows_, Node{false, 0, 0, -1, -1, FLT_MAX, FLT_MAX, FLT_MAX}));
 
 }
 
+
+A_Star::~A_Star() 
+{
+
+    // Freeing memory of grid
+    for (int i = 0; i < numRows_; i++) {
+        free(grid_[i]);
+    }
+    free(grid_);
+
+}
 
 
 void A_Star::runAStar()
@@ -328,15 +260,15 @@ void A_Star::drawGrid()
             
             // Set cell color based on conditions
             cv::Scalar color;
-            if (x == startPos.y && y == startPos.x) {
+            if (x == startPos.x && y == startPos.y) {
                 color = cv::Scalar(0, 0, 255); // Red
-            } else if (x == goalPos.y && y == goalPos.x) {
+            } else if (x == goalPos.x && y == goalPos.y) {
                 color = cv::Scalar(255, 0, 0); // Green
-            } else if (openSet.find({y, x}) != openSet.end()) {
+            } else if (openSet.find({x, y}) != openSet.end()) {
                 color = cv::Scalar(0, 165, 255); // Orange
-            } else if (closedSet.find({y, x}) != closedSet.end()) {
+            } else if (closedSet.find({x, y}) != closedSet.end()) {
                 color = cv::Scalar(255, 0, 255); // Purple
-            } else if (pathSet.find({y, x}) != pathSet.end()) {
+            } else if (pathSet.find({x, y}) != pathSet.end()) {
                 color = cv::Scalar(0, 255, 0); // Blue
             } else if (!grid_[x][y].isOccupied) {
                 color = cv::Scalar(255, 255, 255); // White
@@ -353,5 +285,5 @@ void A_Star::drawGrid()
     // Show the OpenCV image in a window
     cv::imshow("A* Visualization", occupancyGridImage_);
 
-    cv::waitKey(10000); // Wait until a key is pressed to close the window
+    cv::waitKey(1); // Wait until a key is pressed to close the window
 }

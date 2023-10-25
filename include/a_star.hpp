@@ -52,10 +52,12 @@ class A_Star {
 
     public:
         A_Star(int numRows, int numColumns);
+        ~A_Star();
 
         int numRows_;
         int numColumns_;
-        std::vector<std::vector<Node>> grid_;
+        // std::vector<std::vector<Node>> grid_;
+        Node** grid_ = nullptr;
 
         void runAStar();
         void drawGrid();

@@ -5,8 +5,8 @@
 int main() {
 
     // Create an instance of the A_Star class:
-    A_Star a_star(15, 12); // Assuming a 20x20 grid
-    a_star.randomFillGrid(0.2); // Randomly filling 20% of the grid
+    A_Star a_star(10, 10);
+    a_star.randomFillGrid(0); // Randomly filling the grid
 
     // Set the start and goal positions:
     a_star.setStartGoalPoses(0, 0, 2, 3);
